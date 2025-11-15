@@ -12,6 +12,9 @@
    implementation would be to iterate through the candidate array
    and add up the scores of each candidate, **OFF CHAIN!!** (by the
    client/frontend).
+   
+  - Added feature to revert a voting transaction if the time duration
+  is exceeded.
 
 ### Fixes Added
 

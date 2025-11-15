@@ -10,10 +10,7 @@ pragma solidity ^0.8.30;
 // Set voting duration
 // Availability of record
 
-
-
 contract VotingContract {
-
     // Candidate object
     struct Candidate {
         uint256 id;
@@ -32,10 +29,11 @@ contract VotingContract {
     uint256 public votingDuration = 200;
     bool public votingActive = true;
     uint256 public totalVotes = 0;
+    uint256 public startTime = block.timestamp;
 
     // Store candidates
     // We can use a mapping or we can use an array id: candidate
-    mapping (uint256 => Candidate) public candidates;
+    mapping(uint256 => Candidate) public candidates;
     Candidate[] public candidateArray = [];
 
     // A mapping for registered voters. 0x0efo3: true -- voter is regitered
@@ -53,19 +51,26 @@ contract VotingContract {
      * @param name Name of the candidate
      * return name, id of the candidate
      */
-    function registerCandidate(string memory _name) public returns (string memory, uint256) {
-        Candidate memory newCandidate = Candidate(candidateCount, _name, 0, false);
+    function registerCandidate(
+        string memory _name
+    ) public returns (string memory, uint256) {
+        Candidate memory newCandidate = Candidate(
+            candidateCount,
+            _name,
+            0,
+            false
+        );
         candidateArray.push(newCandidate);
         candidates[candidateCount] = newCandidate;
         // Broadcast a candidate has been registered
         emit CandidateRegistered(_name, candidateCount);
-        candidateCount ++; // increase the candidate count 
+        candidateCount++; // increase the candidate count
     }
 
     function getCandidate(uint256 _id) private returns (Candidate memory) {
         return candidates[_id];
     }
-    
+
     // WRONG: This should be done off-chain(in our client application)
     // as it will be very expensive to loop through all candidates on-chain
     function getCandidateWithHighestVote() public returns (Candidate memory) {
@@ -77,8 +82,8 @@ contract VotingContract {
             if (candidateArray[i].score > initialMaxVote) {
                 winnerId = candidateArray[i].id;
             }
-       }
-       return candidates[winnerId]; 
+        }
+        return candidates[winnerId];
     }
 
     function registerAVoter() public {
@@ -103,6 +108,12 @@ contract VotingContract {
     function voteForACandidate(uint256 id) public {
         require(registeredVoters[msg.sender], "Voter is not registered");
         require(!hasVoted[msg.sender], "Voter has already voted");
+        require(
+            block.timestamp <= startTime + votingDuration,
+            "voting duration exceeded"
+        );
+
+        // Using if instead of revert so i get used to both
         if (id <= 0 || id > candidateCount) {
             revert("Candidate does not exist");
         }
