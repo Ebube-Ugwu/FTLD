@@ -30,6 +30,8 @@ contract VotingContract {
     address public owner;
     uint256 private candidateCount = 1;
     uint256 public votingDuration = 200;
+    bool public votingActive = true;
+    uint256 public totalVotes = 0;
 
     // Store candidates
     // We can use a mapping or we can use an array id: candidate
@@ -88,13 +90,30 @@ contract VotingContract {
         return registeredVoters[voter];
     }
 
+    function closeVoting() public {
+        require(msg.sender == owner, "Only owner can close voting");
+        votingActive = false;
+    }
+
+    function openVoting() public {
+        require(msg.sender == owner, "Only owner can open voting");
+        votingActive = true;
+    }
+
     function voteForACandidate(uint256 id) public {
         require(registeredVoters[msg.sender], "Voter is not registered");
         require(!hasVoted[msg.sender], "Voter has already voted");
+        if (id <= 0 || id > candidateCount) {
+            revert("Candidate does not exist");
+        }
+        if (!votingActive) {
+            revert("Voting is not active");
+        }
         Candidate memory candidateToVote = candidates[id]; // Get the candidate
         candidateToVote.score += 1;
+        totalVotes += 1;
+        hasVoted[msg.sender] = true; // Mark that the voter has voted
         candidates[id] = candidateToVote;
-
         emit userVoted(msg.sender, id, candidateToVote.name);
     }
 }
